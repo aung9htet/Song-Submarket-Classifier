@@ -30,10 +30,6 @@ class CyaniteAPI(object):
                                 __typename
                                 ... on AudioAnalysisV6Finished {
                                     result {
-                                        energyLevel
-                                        energyDynamics
-                                        emotionalProfile
-                                        emotionalDynamics
                                         mood {
                                             aggressive
                                             calm
@@ -294,10 +290,16 @@ class CyaniteAPI(object):
         # Send the POST request to the GraphQL endpoint
         response = requests.post(self.base_url, json=self.data, headers=self.headers)
         response = response.json()
-        data = response['data']['spotifyTrackEnqueue']['enqueuedSpotifyTrack']['audioAnalysisV6']['result']
-        mood = data['moodAdvanced']
+        data = response['data']['spotifyTrackEnqueue']
+        key = list(data.keys())[1]
+        if key != "enqueuedSpotifyTrack":
+            print(data[key])
+        data = data[key]['audioAnalysisV6']
+        print(data.keys())
+        data = data['result']
+        mood = data['mood']
         genre = data['genre']
         advancedGenre = data['advancedGenre']
         movement = data['movement']
         character = data['character']
-        return mood, genre, advancedGenre, movement, character
+        return mood, genre, movement, character, advancedGenre

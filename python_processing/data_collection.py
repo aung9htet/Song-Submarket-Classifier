@@ -41,8 +41,9 @@ class DataCollection(object):
                     feature = label | mood | genre | advanced_genre | movement | character
                     features.append(feature)
                     song_count += 1
-                except:
-                    print("Failed to get song.")
+                except Exception as e:
+                    print(track)
+                    print(f"Failed to get song. Error: {e}")
                 print(f"Processing Playlist: {playlist_count}/{len(self.files)} Processed Song: {song_count}/{len(track_list)}")
         self.save_data(features)
 
