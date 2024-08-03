@@ -13,13 +13,18 @@ class DataCollection(object):
         features = []
         playlist_count = 0
         for playlist in self.files:
+            print(playlist)
             playlist_count += 1
             track_list = []
             label = {'label': self.files[playlist]}
             playlist = playlist[34:]
             data = self.spotify.get_playlist_data(playlist)
-            for track_data in data['tracks']['items']:
-                track_list.append(track_data['track']['id'])
+            data_list = data['tracks']['items']
+            for track_index in range(len(data_list)):
+                try:
+                    track_list.append(data_list[track_index]['track']['id'])
+                except Exception as e:
+                    print(e)
             next_playlist = data['tracks']['next']
             if next_playlist is None:
                 find_next = False
