@@ -295,7 +295,6 @@ class CyaniteAPI(object):
         if key != "enqueuedSpotifyTrack":
             print(data[key])
         data = data[key]['audioAnalysisV6']
-        print(data.keys())
         data = data['result']
         mood = data['mood']
         genre = data['genre']
