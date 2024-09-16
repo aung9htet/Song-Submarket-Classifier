@@ -11,7 +11,7 @@ class SpotifyAPI():
             into python. These includes web api, ad api and usage of playcount.
         """
         # general
-        self.current_dir = os.getcwd()
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
         self.base_url = "https://api.spotify.com/v1"
         self.session = requests.Session()
 
@@ -85,12 +85,15 @@ class SpotifyAPI():
             print(e)
         return data
     
-    def get_artist_data(self, artist_id):
+    def get_artist_data(self, artist_id, next = False):
         """
             The following method uses the artist id to get data of the artist.
         """
-        end_point= f"artists/{artist_id}"
-        self.update_url(end_point=end_point)
+        if next == False:
+            end_point= f"artists/{artist_id}"
+            self.update_url(end_point=end_point)
+        else:
+            self.url = artist_id
         data = self.get_data()
         return data
     
@@ -163,7 +166,6 @@ class SpotifyAPI():
             })
         }
         data = self.get_data()
-        print(self.get_data())
 
         album_playcount = {}
 
