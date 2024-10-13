@@ -117,6 +117,18 @@ class SpotifyAPI():
             self.url = playlist
         data = self.get_data()
         return data
+
+    def get_playlist(self, playlist, next = False):
+        """
+            The following method uses the playlist id to get data of the playlist.
+        """
+        if next == False:
+            end_point= f"playlists/{playlist}"
+            self.update_url(end_point=end_point)
+        else:
+            self.url = playlist
+        data = self.get_data()
+        return data
     
     def get_track_data(self, track_id):
         """

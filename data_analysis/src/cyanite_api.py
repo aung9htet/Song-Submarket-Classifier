@@ -13,7 +13,7 @@ class CyaniteAPI(object):
         self.session = requests.Session()
 
         # authentication to process
-        self.access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiSW50ZWdyYXRpb25BY2Nlc3NUb2tlbiIsInZlcnNpb24iOiIxLjAiLCJpbnRlZ3JhdGlvbklkIjoxMTI4LCJ1c2VySWQiOjEyOTU2OCwiYWNjZXNzVG9rZW5TZWNyZXQiOiI3N2Q4ZWU5ZjE0NTkxYWU0N2NmYzg5Mjk4YmRiNTk0Nzc2MTQ1YzAzN2NkMzM1Mzk2YzE5ZDI4Y2RmZjY3M2RmIiwiaWF0IjoxNzIyMjAyMjUwfQ.-ZBpLthMR19Di9jFvb3fkCltX1BZOCLNZ9TfUTbZr2k"
+        self.access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiSW50ZWdyYXRpb25BY2Nlc3NUb2tlbiIsInZlcnNpb24iOiIxLjAiLCJpbnRlZ3JhdGlvbklkIjoxMTI3LCJ1c2VySWQiOjEyOTU2OCwiYWNjZXNzVG9rZW5TZWNyZXQiOiIwMjU0MWU2NDY2ZmM4MWUyM2FhODY4YjY1NzFlZjE3YmZjNmU0ZWE1YjkxYzdhZWEyZTJiYjU5OWFkNTU1NzJmIiwiaWF0IjoxNzI4NzA0Nzk5fQ.9ZuefNQYQwF4Sbbo9HXv6dNkLNX1yATlHMdk7TOXsOE"
         self.headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.access_token}'  # Replace with your actual access token if needed
@@ -746,7 +746,10 @@ class CyaniteAPI(object):
             if 'data' in response_json and 'spotifyTrackEnqueue' in response_json['data']:
                 data = response_json['data']['spotifyTrackEnqueue']
                 if 'enqueuedSpotifyTrack' in data:
-                    track_data = data['enqueuedSpotifyTrack']['audioAnalysisV6']['result']
+                    if 'result' in data['enqueuedSpotifyTrack']['audioAnalysisV6'].keys():
+                        track_data = data['enqueuedSpotifyTrack']['audioAnalysisV6']['result']
+                    else:
+                        track_data = {}
                     return track_data
                 elif 'Error' in data:
                     print(f"Error: {data['Error']['message']}")
@@ -754,8 +757,19 @@ class CyaniteAPI(object):
                 print("Unexpected response format:", response_json)
         except requests.exceptions.RequestException as e:
             print(f"Request failed: {e}")
+            return {}
         return {}
-        
+    
+    def retrieve_data(self, data, data_type):
+        """
+            Used in case data does not exist
+        """
+        try:
+            data = self.get_data(data)[data_type]
+        except Exception:
+            data = None
+        return data
+
     def get_all_data(self):
         """
             Retrieve data on song
@@ -766,96 +780,97 @@ class CyaniteAPI(object):
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        musical_era = self.get_data(data)['musicalEraTag']
+        musical_era = self.retrieve_data(data, 'musicalEraTag')
         # voice retrieval
         data = {
             "query": self.vocal_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        voice_presence = self.get_data(data)['voicePresenceProfile']
-        predominant_voice_gender = self.get_data(data)['predominantVoiceGender']
+        
+        voice_presence = self.retrieve_data(data, 'voicePresenceProfile')
+        predominant_voice_gender = self.retrieve_data(data, 'predominantVoiceGender')
         # genre retrieval
         data = {
             "query": self.genre_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        genreTags = self.get_data(data)['genreTags']
-        genre = self.get_data(data)['genre']
+        genreTags = self.retrieve_data(data, 'genreTags')
+        genre = self.retrieve_data(data, 'genre')
         # sub genre retrieval
         data = {
             "query": self.sub_genre_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        subgenre = self.get_data(data)['subgenre']
-        subgenreTags = self.get_data(data)['subgenreTags']
+        subgenre = self.retrieve_data(data, 'subgenre')
+        subgenreTags = self.retrieve_data(data, 'subgenreTags')
         # free genre retrieval
         data = {
             "query": self.free_genre_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        freegenre = self.get_data(data)['freeGenreTags']
+        freegenre = self.retrieve_data(data, 'freeGenreTags')
         # description retrieval
         data = {
             "query": self.transformer_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        description = self.get_data(data)['transformerCaption']
+        description = self.retrieve_data(data, 'transformerCaption')
         # instrument retrieval
         data = {
             "query": self.instrument_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        instrumentTags = self.get_data(data)['instrumentTags']
-        instrument = self.get_data(data)['advancedInstrumentPresence']
+        instrumentTags = self.retrieve_data(data, 'instrumentTags')
+        instrument = self.retrieve_data(data, 'advancedInstrumentPresence')
         # emotion retrieval
         data = {
             "query": self.emotion_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        emotionProfile = self.get_data(data)['emotionalProfile']
+        emotionProfile = self.retrieve_data(data, 'emotionalProfile')
         # mood retrieval
         data = {
             "query": self.mood_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        moodTags = self.get_data(data)['moodAdvancedTags']
-        mood = self.get_data(data)['moodAdvanced']
-        simple_moodTags = self.get_data(data)['moodTags']
-        simple_mood = self.get_data(data)['mood']
+        moodTags = self.retrieve_data(data, 'moodAdvancedTags')
+        mood = self.retrieve_data(data, 'moodAdvanced')
+        simple_moodTags = self.retrieve_data(data, 'moodTags')
+        simple_mood = self.retrieve_data(data, 'mood')
         # character retrieval
         data = {
             "query": self.character_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        character = self.get_data(data)['character']
-        characterTags = self.get_data(data)['characterTags']
+        character = self.retrieve_data(data, 'character')
+        characterTags = self.retrieve_data(data, 'characterTags')
         # movement retrieval
         data = {
             "query": self.movement_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        movement = self.get_data(data)['movement']
-        movementTags = self.get_data(data)['movementTags']
+        movement = self.retrieve_data(data, 'movement')
+        movementTags = self.retrieve_data(data, 'movementTags')
         # misc retrieval
         data = {
             "query": self.misc_mutation,
             "operationName": "SpotifyTrackEnqueueMutation",
             "variables": self.variables
         }
-        energy = self.get_data(data)['energyLevel']
-        bpm = self.get_data(data)['bpmPrediction']
-        key = self.get_data(data)['keyPrediction']
-        meter = self.get_data(data)['timeSignature']
+        energy = self.retrieve_data(data, 'energyLevel')
+        bpm = self.retrieve_data(data, 'bpmPrediction')
+        key = self.retrieve_data(data, 'keyPrediction')
+        meter = self.retrieve_data(data, 'timeSignature')
 
         result = {'Musical_Era': musical_era, 'Voice_Presence': voice_presence, 'Predominant_Voice_Gender': predominant_voice_gender, 
                   'Genre_Tags': genreTags, 'Genre': genre, 'Sub_Genre': subgenre, 'Sub_Genre_Tags': subgenreTags, 'Free Genre': freegenre, 
@@ -864,5 +879,3 @@ class CyaniteAPI(object):
                   'Character_Tags': characterTags, 'Movement': movement, 'Movement_Tags': movementTags, 'Energy': energy, 'BPM': bpm,
                   'Key': key, 'Meter': meter}
         return result
-cyanite = CyaniteAPI()
-cyanite.get_all_data()
