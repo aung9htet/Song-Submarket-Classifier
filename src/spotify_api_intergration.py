@@ -31,7 +31,7 @@ class SpotifyAPI():
             a url is given.
         """
         self.end_point = end_point
-        self.url = url if not url is None else os.path.join(self.base_url, self.end_point)
+        self.url = url if not url is None else (self.base_url + "/" + self.end_point)
 
     def get_token(self):
         """
@@ -115,6 +115,7 @@ class SpotifyAPI():
             self.update_url(end_point=end_point)
         else:
             self.url = playlist
+        print(self.url)
         data = self.get_data()
         return data
 

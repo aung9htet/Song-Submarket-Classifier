@@ -36,10 +36,13 @@ class RunDataProcess():
         
         # process spotify data
         playlist_counter = 0
+        # reduced to one combined playlist only
+        # print(self.playlist.keys())
+        # self.playlist = {'0czR5cQKhYNwPjVRQGPW3l': self.playlist['0czR5cQKhYNwPjVRQGPW3l']}
         for playlist_id in self.playlist:
             if playlist_id != 'all':
                 spotify_playlist_data = self.spotify_api.get_playlist(playlist_id)
-                dir_name = spotify_playlist_data['name']
+                dir_name = spotify_playlist_data['name'].strip()
                 link = spotify_playlist_data['href']
                 description = spotify_playlist_data['description']
                 follower_count = spotify_playlist_data['followers']['total']
@@ -70,135 +73,137 @@ class RunDataProcess():
                 playlist_counter += 1
                 tracks = self.playlist[playlist_id]
                 for track in tracks:
-                    track_counter += 1
-                    print(f"Processing: Playlist = {playlist_counter}/{len(self.playlist)}, Track = {track_counter}/{len(tracks)}")
-                    cyanite_api = CyaniteAPI(track)
-                    cyanite_data = cyanite_api.get_all_data()
-                    spotify_data = self.spotify_api.get_track_data(track)
-                    track_playcount = self.spotify_api.get_playcount(spotify_data['album']['id'])[0][f'spotify:track:{track}']
-                    song_data = self.process_data_dict(cyanite_data, spotify_data,track_playcount)
+                    try:
+                        track_counter += 1
+                        print(f"Processing: Playlist = {playlist_counter}/{len(self.playlist)}, Track = {track_counter}/{len(tracks)}")
+                        cyanite_api = CyaniteAPI(track)
+                        cyanite_data = cyanite_api.get_all_data()
+                        spotify_data = self.spotify_api.get_track_data(track)
+                        track_playcount = self.spotify_api.get_playcount(spotify_data['album']['id'])[0][f'spotify:track:{track}']
+                        song_data = self.process_data_dict(cyanite_data, spotify_data,track_playcount)
 
-                    # calculate average mood over playlist
-                    if not cyanite_data['Mood'] is None:
-                        if mood is None:
-                            mood = {key: [value] for key, value in cyanite_data['Mood'].items()}
-                        else:
-                            new_item = {key: [value] for key, value in cyanite_data['Mood'].items()}
-                            for key in mood:
-                                mood[key].extend(new_item[key])
-                    
-                    # calculate average simple mood over playlist
-                    if not cyanite_data['Simple_Mood'] is None:
-                        if simple_mood is None:
-                            simple_mood = {key: [value] for key, value in cyanite_data['Simple_Mood'].items()}
-                        else:
-                            new_item = {key: [value] for key, value in cyanite_data['Simple_Mood'].items()}
-                            for key in simple_mood:
-                                simple_mood[key].extend(new_item[key])
+                        # calculate average mood over playlist
+                        if not cyanite_data['Mood'] is None:
+                            if mood is None:
+                                mood = {key: [value] for key, value in cyanite_data['Mood'].items()}
+                            else:
+                                new_item = {key: [value] for key, value in cyanite_data['Mood'].items()}
+                                for key in mood:
+                                    mood[key].extend(new_item[key])
+                        
+                        # calculate average simple mood over playlist
+                        if not cyanite_data['Simple_Mood'] is None:
+                            if simple_mood is None:
+                                simple_mood = {key: [value] for key, value in cyanite_data['Simple_Mood'].items()}
+                            else:
+                                new_item = {key: [value] for key, value in cyanite_data['Simple_Mood'].items()}
+                                for key in simple_mood:
+                                    simple_mood[key].extend(new_item[key])
 
-                    # calculate average character over playlist
-                    if not cyanite_data['Character'] is None:
-                        if character is None:
-                            character = {key: [value] for key, value in cyanite_data['Character'].items()}
-                        else:
-                            new_item = {key: [value] for key, value in cyanite_data['Character'].items()}
-                            for key in character:
-                                character[key].extend(new_item[key])
+                        # calculate average character over playlist
+                        if not cyanite_data['Character'] is None:
+                            if character is None:
+                                character = {key: [value] for key, value in cyanite_data['Character'].items()}
+                            else:
+                                new_item = {key: [value] for key, value in cyanite_data['Character'].items()}
+                                for key in character:
+                                    character[key].extend(new_item[key])
 
-                    # calculate genre over playlist
-                    if not cyanite_data['Genre'] is None:
-                        if genre is None:
-                            genre = {key: [value] for key, value in cyanite_data['Genre'].items()}
-                        else:
-                            new_item = {key: [value] for key, value in cyanite_data['Genre'].items()}
-                            for key in genre:
-                                genre[key].extend(new_item[key])
+                        # calculate genre over playlist
+                        if not cyanite_data['Genre'] is None:
+                            if genre is None:
+                                genre = {key: [value] for key, value in cyanite_data['Genre'].items()}
+                            else:
+                                new_item = {key: [value] for key, value in cyanite_data['Genre'].items()}
+                                for key in genre:
+                                    genre[key].extend(new_item[key])
 
-                    # record vocal presence
-                    if not cyanite_data['Voice_Presence'] is None:
-                        if not cyanite_data['Voice_Presence'] in vocal_presence.keys():
-                            vocal_presence[cyanite_data['Voice_Presence']] = 1
-                        else:
-                            vocal_presence[cyanite_data['Voice_Presence']] = vocal_presence[cyanite_data['Voice_Presence']] + 1
-                    
-                    # record instrument presence
-                    if not cyanite_data['Instrument'] is None:
-                        for instrument in cyanite_data['Instrument']:
-                            if cyanite_data['Instrument'][instrument] == "throughout":
-                                if not instrument in instruments.keys():
-                                    instruments[instrument] = 1
+                        # record vocal presence
+                        if not cyanite_data['Voice_Presence'] is None:
+                            if not cyanite_data['Voice_Presence'] in vocal_presence.keys():
+                                vocal_presence[cyanite_data['Voice_Presence']] = 1
+                            else:
+                                vocal_presence[cyanite_data['Voice_Presence']] = vocal_presence[cyanite_data['Voice_Presence']] + 1
+                        
+                        # record instrument presence
+                        if not cyanite_data['Instrument'] is None:
+                            for instrument in cyanite_data['Instrument']:
+                                if cyanite_data['Instrument'][instrument] == "throughout":
+                                    if not instrument in instruments.keys():
+                                        instruments[instrument] = 1
+                                    else:
+                                        instruments[instrument] = instruments[instrument] + 1
+
+                        # record energy level
+                        if not cyanite_data['Energy'] is None:
+                            if not cyanite_data['Energy'] in energy_level.keys():
+                                energy_level[cyanite_data['Energy']] = 1
+                            else:
+                                energy_level[cyanite_data['Energy']] = energy_level[cyanite_data['Energy']] + 1
+
+                        # record key
+                        if not cyanite_data['Key'] is None:
+                            if not cyanite_data['Key']['value'] in song_key.keys():
+                                song_key[cyanite_data['Key']['value']] = 1
+                            else:
+                                song_key[cyanite_data['Key']['value']] = song_key[cyanite_data['Key']['value']] + 1
+
+                        # record meter
+                        if not cyanite_data['Meter'] is None:
+                            if not cyanite_data['Meter'] in meter.keys():
+                                meter[cyanite_data['Meter']] = 1
+                            else:
+                                meter[cyanite_data['Meter']] = meter[cyanite_data['Meter']] + 1
+
+                        # record sub-genre
+                        if not cyanite_data['Sub_Genre_Tags'] is None:
+                            for sub_gen in cyanite_data['Sub_Genre_Tags']:
+                                if not sub_gen in sub_genre.keys():
+                                    sub_genre[sub_gen] = 1
                                 else:
-                                    instruments[instrument] = instruments[instrument] + 1
+                                    sub_genre[sub_gen] = sub_genre[sub_gen] + 1
 
-                    # record energy level
-                    if not cyanite_data['Energy'] is None:
-                        if not cyanite_data['Energy'] in energy_level.keys():
-                            energy_level[cyanite_data['Energy']] = 1
-                        else:
-                            energy_level[cyanite_data['Energy']] = energy_level[cyanite_data['Energy']] + 1
+                        # record free-genre
+                        if not cyanite_data['Free Genre'] is None:
+                            for free_gen in cyanite_data['Free Genre'].split(','):
+                                if not free_gen in free_genre.keys():
+                                    free_genre[free_gen] = 1
+                                else:
+                                    free_genre[free_gen] = free_genre[free_gen] + 1
 
-                    # record key
-                    if not cyanite_data['Key'] is None:
-                        if not cyanite_data['Key']['value'] in song_key.keys():
-                            song_key[cyanite_data['Key']['value']] = 1
-                        else:
-                            song_key[cyanite_data['Key']['value']] = song_key[cyanite_data['Key']['value']] + 1
-
-                    # record meter
-                    if not cyanite_data['Meter'] is None:
-                        if not cyanite_data['Meter'] in meter.keys():
-                            meter[cyanite_data['Meter']] = 1
-                        else:
-                            meter[cyanite_data['Meter']] = meter[cyanite_data['Meter']] + 1
-
-                    # record sub-genre
-                    if not cyanite_data['Sub_Genre_Tags'] is None:
-                        for sub_gen in cyanite_data['Sub_Genre_Tags']:
-                            if not sub_gen in sub_genre.keys():
-                                sub_genre[sub_gen] = 1
+                        # record musical era
+                        if not cyanite_data['Musical_Era'] is None:
+                            if not cyanite_data['Musical_Era'] in musical_era.keys():
+                                musical_era[cyanite_data['Musical_Era']] = 1
                             else:
-                                sub_genre[sub_gen] = sub_genre[sub_gen] + 1
-
-                    # record free-genre
-                    if not cyanite_data['Free Genre'] is None:
-                        for free_gen in cyanite_data['Free Genre'].split(','):
-                            if not free_gen in free_genre.keys():
-                                free_genre[free_gen] = 1
+                                musical_era[cyanite_data['Musical_Era']] = musical_era[cyanite_data['Musical_Era']] + 1
+                        
+                        # record artists
+                        artist_data = spotify_data["artists"]
+                        for artist in artist_data:
+                            artist_name = artist["name"]
+                            if not artist_name in artists.keys():
+                                artists[artist_name] = 1
                             else:
-                                free_genre[free_gen] = free_genre[free_gen] + 1
+                                artists[artist_name] = artists[artist_name] + 1
 
-                    # record musical era
-                    if not cyanite_data['Musical_Era'] is None:
-                        if not cyanite_data['Musical_Era'] in musical_era.keys():
-                            musical_era[cyanite_data['Musical_Era']] = 1
-                        else:
-                            musical_era[cyanite_data['Musical_Era']] = musical_era[cyanite_data['Musical_Era']] + 1
-                    
-                    # record artists
-                    artist_data = spotify_data["artists"]
-                    for artist in artist_data:
-                        artist_name = artist["name"]
-                        if not artist_name in artists.keys():
-                            artists[artist_name] = 1
-                        else:
-                            artists[artist_name] = artists[artist_name] + 1
+                        # process for playlist general data
+                        if playlist_id != 'all':
+                            if cyanite_data['Emotional_Profile'] == 'positive':
+                                positive_emotional_percentage += 1
+                            if not cyanite_data['BPM'] is None:
+                                bpm_average.append(cyanite_data['BPM']['value'])
+                            if cyanite_data['Emotional_Profile'] == 'female':
+                                female_dominant_vocal_percentage += cyanite_data['Predominant_Voice_Gender']
 
-                    # process for playlist general data
-                    if playlist_id != 'all':
-                        if cyanite_data['Emotional_Profile'] == 'positive':
-                            positive_emotional_percentage += 1
-                        if not cyanite_data['BPM'] is None:
-                            bpm_average.append(cyanite_data['BPM']['value'])
-                        if cyanite_data['Emotional_Profile'] == 'female':
-                            female_dominant_vocal_percentage += cyanite_data['Predominant_Voice_Gender']
-
-                    # Process Song Data
-                    if track_counter == 1:
-                        writer = csv.DictWriter(file, fieldnames=song_data.keys())
-                        writer.writeheader()
-                    writer.writerow(song_data)
+                        # Process Song Data
+                        if track_counter == 1:
+                            writer = csv.DictWriter(file, fieldnames=song_data.keys())
+                            writer.writeheader()
+                        writer.writerow(song_data)
+                    except Exception as e:
+                        print(f"Error processing {track}: {e}")
                 print(f"Data added to {csv_file}")   
-
                 # process all the mood
                 csv_file = f"../results/{dir_name}/mood_data.csv"
                 if mood is None:
@@ -422,6 +427,7 @@ class RunDataProcess():
             Get all the track id of playlist
         """
         playlist_data = self.spotify_api.get_playlist_data(playlist_id)
+        print(playlist_data)
         track_list = []
         for track_data in playlist_data['items']:
             track_data = track_data['track']
@@ -516,52 +522,91 @@ class ResultsPlotter():
     
     def process_plots(self):
         for process_dir in self.data_dirs:
-            artists = self.get_csv_bar(process_dir, 'artists_data')
-            self.plot_bar(artists[0], artists[1], 'Artist', 'Recurrence Count', 'Artist Count', process_dir + '/artists_data.png')
+            try:
+                artists_data, artists_counter = zip(*self.get_csv_bar(process_dir, 'artists_data'))
+                self.plot_bar(artists_data, artists_counter, 'Artist', 'Recurrence Count', 'Artist Count', process_dir + '/artists_data.png')
+            except Exception:
+                pass
 
-            character = self.get_csv_pie(process_dir, 'character_data')
-            self.plot_pie(character[1], character[0], 'Character Distribution', process_dir + '/character_data.png')
+            try:
+                character = self.get_csv_pie(process_dir, 'character_data')
+                self.plot_pie(character[1], character[0], 'Character Distribution', process_dir + '/character_data.png')
+            except Exception:
+                pass
 
-            energy_level = self.get_csv_bar(process_dir, 'energy_level_data')
-            self.plot_bar(energy_level[0], energy_level[1], 'Energy Level', 'Recurrence Count', 'Energy Level Count', process_dir + '/energy_level_data.png')
+            try:
+                energy_level_data, energy_level_counter = zip(*self.get_csv_bar(process_dir, 'energy_level_data'))
+                self.plot_bar(energy_level_data, energy_level_counter, 'Energy Level', 'Recurrence Count', 'Energy Level Count', process_dir + '/energy_level_data.png')
+            except Exception:
+                pass
 
-            free_genre = self.get_csv_bar(process_dir, 'free_genre_data')
-            self.plot_bar(free_genre[0], free_genre[1], 'Free Genre', 'Recurrence Count', 'Free Genre Count', process_dir + '/free_genre_data.png')
+            try:
+                free_genre_data, free_genre_counter = zip(*self.get_csv_bar(process_dir, 'free_genre_data'))
+                self.plot_bar(free_genre_data, free_genre_counter, 'Free Genre', 'Recurrence Count', 'Free Genre Count', process_dir + '/free_genre_data.png')
+            except Exception:
+                pass
 
-            genre = self.get_csv_pie(process_dir, 'genre_data')
-            threshold = float(sorted(sorted(genre[1],reverse=True)[:8])[0])
-            self.plot_pie(genre[1], genre[0], 'Genre Distribution', process_dir + '/genre_data.png', threshold)
+            try:
+                genre = self.get_csv_pie(process_dir, 'genre_data')
+                threshold = float(sorted(sorted(genre[1],reverse=True)[:8])[0])
+                self.plot_pie(genre[1], genre[0], 'Genre Distribution', process_dir + '/genre_data.png', threshold)
+            except Exception:
+                pass
 
-            instruments = self.get_csv_bar(process_dir, 'instruments_data')
-            self.plot_bar(instruments[0], instruments[1], 'Instruments', 'Recurrence Count', 'Instruments Count', process_dir + '/instruments_data.png')
+            try:
+                instruments_data, instruments_counter = zip(*self.get_csv_bar(process_dir, 'instruments_data'))
+                self.plot_bar(instruments_data, instruments_counter, 'Instruments', 'Recurrence Count', 'Instruments Count', process_dir + '/instruments_data.png')
+            except Exception:
+                pass
 
-            meter = self.get_csv_bar(process_dir, 'meter_data')
-            self.plot_bar(meter[0], meter[1], 'Meter', 'Recurrence Count', 'Meter Count', process_dir + '/meter_data.png')
+            try:
+                meter_data, meter_counter = zip(*self.get_csv_bar(process_dir, 'meter_data'))
+                self.plot_bar(meter_data, meter_counter, 'Meter', 'Recurrence Count', 'Meter Count', process_dir + '/meter_data.png')
+            except Exception:
+                pass
             
-            mood = self.get_csv_pie(process_dir, 'mood_data')
-            threshold = float(sorted(sorted(mood[1],reverse=True)[:10])[0])
-            self.plot_pie(mood[1], mood[0], 'Mood Distribution', process_dir + '/mood_data.png', threshold)
+            try:
+                mood = self.get_csv_pie(process_dir, 'mood_data')
+                threshold = float(sorted(sorted(mood[1],reverse=True)[:10])[0])
+                self.plot_pie(mood[1], mood[0], 'Mood Distribution', process_dir + '/mood_data.png', threshold)
+            except Exception:
+                pass
+   
+            try:
+                musical_era_data, musical_era_counter = zip(*self.get_csv_bar(process_dir, 'musical_era_data'))
+                self.plot_bar(musical_era_data[0], musical_era_counter, 'Musical Era', 'Recurrence Count', 'Musical Era Count', process_dir + '/musical_era_data.png')
+            except Exception:
+                pass
 
-            musical_era = self.get_csv_bar(process_dir, 'musical_era_data')
-            self.plot_bar(musical_era[0], musical_era[1], 'Musical Era', 'Recurrence Count', 'Musical Era Count', process_dir + '/musical_era_data.png')
+            try:
+                simple_mood = self.get_csv_pie(process_dir, 'simple_mood_data')
+                self.plot_pie(simple_mood[1], simple_mood[0], 'Simple Mood Distribution', process_dir + '/simple_mood_data.png')
+            except Exception:
+                pass
+            
+            try:    
+                song_key_data, song_key_counter = zip(*self.get_csv_bar(process_dir, 'song_key_data'))
+                self.plot_bar(song_key_data, song_key_counter, 'Song Key', 'Recurrence Count', 'Song Key Count', process_dir + '/song_key_data.png')
+            except Exception:
+                pass
+           
+            try:
+                sub_genre_data, sub_genre_counter = zip(*self.get_csv_bar(process_dir, 'sub_genre_data'))
+                self.plot_bar(sub_genre_data, sub_genre_counter, 'Sub Genre', 'Recurrence Count', 'Sub Genre Count', process_dir + '/sub_genre_data.png')
+            except Exception:
+                pass
 
-            simple_mood = self.get_csv_pie(process_dir, 'simple_mood_data')
-            self.plot_pie(simple_mood[1], simple_mood[0], 'Simple Mood Distribution', process_dir + '/simple_mood_data.png')
-
-            song_key = self.get_csv_bar(process_dir, 'song_key_data')
-            self.plot_bar(song_key[0], song_key[1], 'Song Key', 'Recurrence Count', 'Song Key Count', process_dir + '/song_key_data.png')
-
-            sub_genre = self.get_csv_bar(process_dir, 'sub_genre_data')
-            self.plot_bar(sub_genre[0], sub_genre[1], 'Sub Genre', 'Recurrence Count', 'Sub Genre Count', process_dir + '/sub_genre_data.png')
-
-            vocal_presence = self.get_csv_bar(process_dir, 'vocal_presence_data')
-            self.plot_bar(vocal_presence[0], vocal_presence[1], 'Vocal Presence', 'Recurrence Count', 'Vocal Presence Count', process_dir + '/vocal_presence_data.png')
+            try:
+                vocal_presence_data, vocal_presence_counter = zip(*self.get_csv_bar(process_dir, 'vocal_presence_data'))
+                self.plot_bar(vocal_presence_data, vocal_presence_counter, 'Vocal Presence', 'Recurrence Count', 'Vocal Presence Count', process_dir + '/vocal_presence_data.png')
+            except Exception:
+                pass
 
     def get_csv_bar(self, base_dir, file_name):
-        data = []
+        # data = []
         
         # Open and read the CSV file
-        with open(base_dir + '/' + file_name + '.csv', mode='r') as file:
+        with open(base_dir + '/' + file_name + '.csv', mode='r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
             rows = list(csv_reader)
             
@@ -569,17 +614,25 @@ class ResultsPlotter():
             columns = list(zip(*rows))
             
             # Extract data, skip the headers
-            data = [list(col)[1:] for col in columns]
-            
-            # Convert the second list to float
-            data[1] = [float(item) for item in data[1]]  # Converting the second column (after the header) to floats
+            data_name = list(columns[0][1:])
+            data_count = counts = [float(item) for item in columns[1][1:]]
 
-        return data
+            combined_data = list(zip(data_name, counts))
+        
+            # Sort by counts in descending order
+            sorted_data = sorted(combined_data, key=lambda x: x[1], reverse=True)
+
+            top_data = sorted_data[:20] if len(sorted_data) > 20 else sorted_data
+
+            # # Convert the second list to float
+            # data[1] = [float(item) for item in data[1]]  # Converting the second column (after the header) to floats
+
+        return top_data
 
     
     def get_csv_pie(self, base_dir, file_name):
         data = []
-        with open(base_dir + '/' + file_name + '.csv', mode='r') as file:
+        with open(base_dir + '/' + file_name + '.csv', mode='r', encoding='utf-8') as file:
             csv_reader = csv.reader(file)
             for row in csv_reader:
                 data.append(row)
@@ -628,7 +681,7 @@ class ResultsPlotter():
         plt.savefig(loc)
         plt.close()  # Close the plot after saving
 
-runData = RunDataProcess()
-runData.analyse_all_data()
+# runData = RunDataProcess()
+# runData.analyse_all_data()
 plotter = ResultsPlotter()
 plotter.process_plots()
