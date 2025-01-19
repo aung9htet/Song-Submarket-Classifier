@@ -158,6 +158,16 @@ class SpotifyAPI():
         data = self.get_data()
         return data
     
+    def get_isrc(self, track_id):
+        """
+            The following method returns the songwriter
+        """
+        end_point = f"tracks/{track_id}"
+        self.update_url(end_point=end_point)
+        data = self.get_data()
+        isrc = data["external_ids"]["isrc"]
+        return isrc
+    
     def get_playcount(self, album_id):
         """
             The following method returns the total playcount for the album and for all the tracks
