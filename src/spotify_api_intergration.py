@@ -158,6 +158,15 @@ class SpotifyAPI():
         data = self.get_data()
         return data
     
+    def get_id_from_isrc(self, isrc):
+        """
+            The following method uses the isrc to get track id.
+        """
+        end_point = f"search?type=track&q=isrc:{isrc}"
+        self.update_url(end_point=end_point)
+        data = self.get_data()
+        return data
+
     def get_isrc(self, track_id):
         """
             The following method returns the songwriter

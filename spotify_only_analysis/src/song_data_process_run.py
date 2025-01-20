@@ -3,7 +3,6 @@ import sys
 import csv
 import pandas as pd
 import numpy as np
-from cyanite_api import CyaniteAPI
 sys.path.append('../../src')
 from spotify_api_intergration import SpotifyAPI
 from apple_api_integration import AppleAPI
@@ -64,7 +63,22 @@ class RunDataProcess():
                         isrc = self.spotify_api.get_isrc(track)
                         apple_song_id = self.apple_api.get_song_id(isrc)
                         composer_name = self.apple_api.get_song_writer(apple_song_id)
-                        song_data = self.process_data_dict(spotify_data, composer_name, track_playcount)
+                        
+                        # for composer in composer_name.split(","):
+                        #     composer = composer.strip()
+                        similar_song_list = self.apple_api.get_song_recommendation(composer_name, spotify_data['name'])
+                        chosen_song = None
+                        chosen_song_max_stream = 0
+                        for similar_song in similar_song_list:
+                            for song in self.spotify_api.get_id_from_isrc(similar_song)['tracks']['items']:
+                                song_id = song['id']
+                                song_data = self.spotify_api.get_track_data(song_id)
+                                song_playcount = self.spotify_api.get_playcount(song_data['album']['id'])[0][f'spotify:track:{song_id}']                                
+                                if song_playcount > chosen_song_max_stream:
+                                    chosen_song_max_stream = song_playcount
+                                    chosen_song = song_data['external_urls']
+
+                        song_data = self.process_data_dict(spotify_data, composer_name, track_playcount, chosen_song)
 
                         if track_counter == 1:
                             writer = csv.DictWriter(file, fieldnames=song_data.keys())
@@ -75,12 +89,12 @@ class RunDataProcess():
                     except Exception as e:
                         print(f"Error processing {track}: {e}")
 
-    def process_data_dict(self, spotify_data, composer_name, track_playcount):
+    def process_data_dict(self, spotify_data, composer_name, track_playcount, org_song):
         """
             Sort data to dict based on rows for csv
         """
         song_data = {'Song_Name': spotify_data['name'], 'Song_Link': spotify_data['id'], 'Artist_Name': ', '.join([item['name'] for item in spotify_data['artists'] if 'name' in item]), 
-                     'Stream_Count': track_playcount, 'Release Date': spotify_data['album']['release_date'], 'Composer Nmae': composer_name}
+                     'Stream_Count': track_playcount, 'Release Date': spotify_data['album']['release_date'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song}
         return song_data
                     
     def get_songs_to_process(self, file):

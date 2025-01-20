@@ -2,6 +2,7 @@ import os
 import json
 import time
 import requests
+import re
 from apple_music_auth import AppleMusicAuth
 
 class AppleAPI():
@@ -49,11 +50,48 @@ class AppleAPI():
         return song_id
     
     def get_song_writer(self, song_id):
-        self.url = f"https://api.music.apple.com/v1/catalog/us/songs/{song_id}"
-        params = None
+        try:
+            self.url = f"https://api.music.apple.com/v1/catalog/us/songs/{song_id}"
+            params = None
+            data = self.get_data(params)
+            composer_name = data["data"][0]["attributes"]["composerName"]
+            return composer_name
+        except Exception as e:
+            return ""
+
+    def get_song_recommendation(self, composers, song_name):
+        self.url = f"https://api.music.apple.com/v1/catalog/us/search"
+        params = {"term": f"{self.filter_song_name(song_name)}"}
         data = self.get_data(params)
-        composer_name = data["data"][0]["attributes"]["composerName"]
-        return composer_name
+        composers = composers.replace("and", ",")
+        composers = composers.replace("&", ",")
+        composer_list = composers.split(',')
+        composer_list = [item.strip() for item in composer_list] # target song composer
+        song_to_check = []
+        song_not_to_check = []
+        for song in data['results']['songs']['data']:
+            unfiltered_composer = self.get_song_writer(song['id'])
+            searched_song_composer = unfiltered_composer.replace("and", ",")
+            searched_song_composer = searched_song_composer.replace("&", ",")
+            for composer in searched_song_composer.split(","):
+                composer = composer.strip()
+                if composer in composer_list:
+                    if not song['attributes']['isrc'] in song_to_check:
+                        song_to_check.append(song['attributes']['isrc'])
+                else:
+                    if not song['attributes']['isrc'] in song_not_to_check:
+                        song_not_to_check.append(song['attributes']['isrc'])
+            if len(song_to_check) == 0 :
+                song_not_to_check = song_to_check
+        return song_to_check
+
+    def filter_song_name(self, song_name):
+        keywords = ["Piano", "Guitar", "Lofi", "Cover", "Instrumental", "Remix", "Version", "Acoustic"]
+        pattern = r"\s*-?\(?\b(" + "|".join(map(re.escape, keywords)) + r")\b\)?-?\s*"
+        result = re.sub(pattern, "", song_name, flags=re.IGNORECASE)
+        filtered_result = re.sub(r"[^\w\s]", "", result)
+        print(filtered_result)
+        return filtered_result.strip()
 
 #     def get_storefronts(self):
 #         self.update_url(end_point="storefronts")
