@@ -78,7 +78,7 @@ class RunDataProcess():
                                     chosen_song_max_stream = song_playcount
                                     chosen_song = song_data['external_urls']
 
-                        song_data = self.process_data_dict(spotify_data, composer_name, track_playcount, chosen_song)
+                        song_data = self.process_data_dict(spotify_data, composer_name, track_playcount, chosen_song, chosen_song_max_stream)
 
                         if track_counter == 1:
                             writer = csv.DictWriter(file, fieldnames=song_data.keys())
@@ -89,12 +89,12 @@ class RunDataProcess():
                     except Exception as e:
                         print(f"Error processing {track}: {e}")
 
-    def process_data_dict(self, spotify_data, composer_name, track_playcount, org_song):
+    def process_data_dict(self, spotify_data, composer_name, track_playcount, org_song, chosen_song_max_stream):
         """
             Sort data to dict based on rows for csv
         """
         song_data = {'Song_Name': spotify_data['name'], 'Song_Link': spotify_data['id'], 'Artist_Name': ', '.join([item['name'] for item in spotify_data['artists'] if 'name' in item]), 
-                     'Stream_Count': track_playcount, 'Release Date': spotify_data['album']['release_date'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song}
+                     'Stream_Count': track_playcount, 'Release Date': spotify_data['album']['release_date'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song, 'Original Song Stream Count': chosen_song_max_stream}
         return song_data
                     
     def get_songs_to_process(self, file):
