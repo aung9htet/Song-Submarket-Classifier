@@ -100,7 +100,7 @@ class RunDataProcess():
                                     chosen_song_max_stream = song_playcount
                                     chosen_song = song_data['external_urls']
 
-                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream, chosen_song_data)
+                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream, song_data)
 
                         # calculate average mood over playlist
                         if not cyanite_data['Mood'] is None:
