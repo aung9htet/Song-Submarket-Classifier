@@ -100,7 +100,7 @@ class RunDataProcess():
                                     chosen_song_max_stream = song_playcount
                                     chosen_song = song_data['external_urls']
 
-                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream)
+                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream, chosen_song_data)
 
                         # calculate average mood over playlist
                         if not cyanite_data['Mood'] is None:
@@ -398,7 +398,7 @@ class RunDataProcess():
                         writer.writerow({'Playlist Name': dir_name, 'Playlist Link': link, 'Playlist Description': description, 'Follower Count': follower_count, 'Positive Emotional Profile': f'{positive_emotional_percentage * 100}%', 'Average BPM': bpm_average, 'Female Dominant Vocal Percentage': f'{female_dominant_vocal_percentage * 100}%'})
                     print(f"Data added to {csv_file}")
 
-    def process_data_dict(self, cyanite_data, spotify_data, track_playcount, composer_name, org_song, chosen_song_max_stream):
+    def process_data_dict(self, cyanite_data, spotify_data, track_playcount, composer_name, org_song, chosen_song_max_stream, chosen_song_data):
         """
             Sort data to dict based on rows for csv
         """
@@ -408,7 +408,7 @@ class RunDataProcess():
                   'Genre_Tags': None if cyanite_data['Genre_Tags'] is None else ','.join(cyanite_data['Genre_Tags']), 'Sub_Genre_Tags': None if cyanite_data['Sub_Genre_Tags'] is None else ','.join(cyanite_data['Sub_Genre_Tags']), 'Free Genre': cyanite_data['Free Genre'], 
                   'Description': cyanite_data['Description'], 'Instrument_Tags': None if cyanite_data['Instrument_Tags'] is None else ','.join(cyanite_data['Instrument_Tags']), 'Emotional_Profile': cyanite_data['Emotional_Profile'],
                   'Mood_Tags': None if cyanite_data['Mood_Tags'] is None else ','.join(cyanite_data['Mood_Tags']), 'Simple_Mood_Tags': None if cyanite_data['Simple_Mood_Tags'] is None else ','.join(cyanite_data['Simple_Mood_Tags']), 'Character_Tags': None if cyanite_data['Character_Tags'] is None else ','.join(cyanite_data['Character_Tags']),
-                  'Movement_Tags': None if cyanite_data['Movement_Tags'] is None else ','.join(cyanite_data['Movement_Tags']), 'Energy': cyanite_data['Energy'], 'BPM': None if cyanite_data['BPM'] is None else cyanite_data['BPM']['value'], 'Key': None if cyanite_data['Key'] is None else cyanite_data['Key']['value'], 'Meter': cyanite_data['Meter'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song, 'Original Song Stream Count': chosen_song_max_stream}
+                  'Movement_Tags': None if cyanite_data['Movement_Tags'] is None else ','.join(cyanite_data['Movement_Tags']), 'Energy': cyanite_data['Energy'], 'BPM': None if cyanite_data['BPM'] is None else cyanite_data['BPM']['value'], 'Key': None if cyanite_data['Key'] is None else cyanite_data['Key']['value'], 'Meter': cyanite_data['Meter'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song, 'Original Song Stream Count': chosen_song_max_stream, 'Original Song Release Date': chosen_song_data['album']['release_date']}
         return song_data
                     
     def get_songs_to_process(self, file):
