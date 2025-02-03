@@ -94,13 +94,13 @@ class RunDataProcess():
                         for similar_song in similar_song_list:
                             for song in self.spotify_api.get_id_from_isrc(similar_song)['tracks']['items']:
                                 song_id = song['id']
-                                song_data = self.spotify_api.get_track_data(song_id)
-                                song_playcount = self.spotify_api.get_playcount(song_data['album']['id'])[0][f'spotify:track:{song_id}']                                
+                                song_data_parent = self.spotify_api.get_track_data(song_id)
+                                song_playcount = self.spotify_api.get_playcount(song_data_parent['album']['id'])[0][f'spotify:track:{song_id}']                                
                                 if song_playcount > chosen_song_max_stream:
                                     chosen_song_max_stream = song_playcount
-                                    chosen_song = song_data['external_urls']
+                                    chosen_song = song_data_parent['external_urls']
 
-                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream, song_data)
+                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream, song_data_parent)
 
                         # calculate average mood over playlist
                         if not cyanite_data['Mood'] is None:
@@ -408,7 +408,7 @@ class RunDataProcess():
                   'Genre_Tags': None if cyanite_data['Genre_Tags'] is None else ','.join(cyanite_data['Genre_Tags']), 'Sub_Genre_Tags': None if cyanite_data['Sub_Genre_Tags'] is None else ','.join(cyanite_data['Sub_Genre_Tags']), 'Free Genre': cyanite_data['Free Genre'], 
                   'Description': cyanite_data['Description'], 'Instrument_Tags': None if cyanite_data['Instrument_Tags'] is None else ','.join(cyanite_data['Instrument_Tags']), 'Emotional_Profile': cyanite_data['Emotional_Profile'],
                   'Mood_Tags': None if cyanite_data['Mood_Tags'] is None else ','.join(cyanite_data['Mood_Tags']), 'Simple_Mood_Tags': None if cyanite_data['Simple_Mood_Tags'] is None else ','.join(cyanite_data['Simple_Mood_Tags']), 'Character_Tags': None if cyanite_data['Character_Tags'] is None else ','.join(cyanite_data['Character_Tags']),
-                  'Movement_Tags': None if cyanite_data['Movement_Tags'] is None else ','.join(cyanite_data['Movement_Tags']), 'Energy': cyanite_data['Energy'], 'BPM': None if cyanite_data['BPM'] is None else cyanite_data['BPM']['value'], 'Key': None if cyanite_data['Key'] is None else cyanite_data['Key']['value'], 'Meter': cyanite_data['Meter'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song, 'Original Song Stream Count': chosen_song_max_stream, 'Original Song Release Date': chosen_song_data['album']['release_date']}
+                  'Movement_Tags': None if cyanite_data['Movement_Tags'] is None else ','.join(cyanite_data['Movement_Tags']), 'Energy': cyanite_data['Energy'], 'BPM': None if cyanite_data['BPM'] is None else cyanite_data['BPM']['value'], 'Key': None if cyanite_data['Key'] is None else cyanite_data['Key']['value'], 'Meter': cyanite_data['Meter'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song, 'Original Song Stream Count': chosen_song_max_stream}
         return song_data
                     
     def get_songs_to_process(self, file):
@@ -522,11 +522,8 @@ class RunDataProcess():
             print(f"Processed {file_to_analyse} from xlsx to list")
         # Csv format process
         elif file_to_analyse.endswith('.csv'):
-            file = pd.read_csv(file_to_analyse)
-            if len(file.sheet_names) > 1:
-                print(f"Error: {file_to_analyse} has more than 1 column")
-            file = file.parse(file.sheet_names[0])
-            data = file.values.tolist()
+            df = pd.read_csv(file_to_analyse)
+            data = df.values.tolist()
             print(f"Processed {file_to_analyse} from csv to list")
         # Unknown format
         else:
