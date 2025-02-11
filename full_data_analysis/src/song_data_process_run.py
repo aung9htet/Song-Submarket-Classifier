@@ -8,6 +8,8 @@ sys.path.append('../../src')
 from spotify_api_intergration import SpotifyAPI
 from apple_api_integration import AppleAPI
 import matplotlib.pyplot as plt
+from itertools import islice
+import re
 
 class RunDataProcess():
     
@@ -17,7 +19,15 @@ class RunDataProcess():
         self.spotify_api = SpotifyAPI()
         self.apple_api = AppleAPI()
         self.playlist = {'all': []}
-        
+
+    def sanitize_filename(self, filename, replacement="_", max_length=255):
+        """Sanitize a filename to be safe for use on Windows and other filesystems."""
+        pattern = r'\/?%*:|"<>'
+        result = re.sub(pattern, "", filename, flags=re.IGNORECASE)
+        filtered_result = re.sub(r"[^\w\s]", replacement, result)
+        print(filtered_result)
+        return filtered_result.strip()
+    
     def analyse_all_data(self):
         """
             The following code is used to process all data
@@ -42,9 +52,12 @@ class RunDataProcess():
         # print(self.playlist.keys())
         # self.playlist = {'0czR5cQKhYNwPjVRQGPW3l': self.playlist['0czR5cQKhYNwPjVRQGPW3l']}
         for playlist_id in self.playlist:
+        # for playlist_id in islice(self.playlist, 2, None):
             if playlist_id != 'all':
                 spotify_playlist_data = self.spotify_api.get_playlist(playlist_id)
                 dir_name = spotify_playlist_data['name'].strip()
+                print(type(dir_name))
+                dir_name = self.sanitize_filename(filename=str(dir_name))
                 link = spotify_playlist_data['href']
                 description = spotify_playlist_data['description']
                 follower_count = spotify_playlist_data['followers']['total']
@@ -94,13 +107,25 @@ class RunDataProcess():
                         for similar_song in similar_song_list:
                             for song in self.spotify_api.get_id_from_isrc(similar_song)['tracks']['items']:
                                 song_id = song['id']
-                                song_data_parent = self.spotify_api.get_track_data(song_id)
-                                song_playcount = self.spotify_api.get_playcount(song_data_parent['album']['id'])[0][f'spotify:track:{song_id}']                                
-                                if song_playcount > chosen_song_max_stream:
-                                    chosen_song_max_stream = song_playcount
-                                    chosen_song = song_data_parent['external_urls']
+                                if not song_id is None:
+                                    song_data_parent = self.spotify_api.get_track_data(song_id)
+                                    try:
+                                        song_playcount = self.spotify_api.get_playcount(song_data_parent['album']['id'])[0][f'spotify:track:{song_id}']
+                                        if song_playcount > chosen_song_max_stream:
+                                            chosen_song_max_stream = song_playcount
+                                            chosen_song = song_data_parent['external_urls']
+                                        chosen_song_release_date = song_data_parent['album']['release_date']                            
+                                    except Exception as e:
+                                        song_playcount = None
+                                        chosen_song = None
+                                        chonsen_song_max_stream = None
+                                        chosen_song_release_date = None
+                                else:
+                                    chosen_song = None
+                                    chonsen_song_max_stream = None
+                                    chosen_song_release_date = None
 
-                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream, song_data_parent)
+                        song_data = self.process_data_dict(cyanite_data, spotify_data, track_playcount, composer_name, chosen_song, chosen_song_max_stream, chosen_song_release_date)
 
                         # calculate average mood over playlist
                         if not cyanite_data['Mood'] is None:
@@ -398,7 +423,7 @@ class RunDataProcess():
                         writer.writerow({'Playlist Name': dir_name, 'Playlist Link': link, 'Playlist Description': description, 'Follower Count': follower_count, 'Positive Emotional Profile': f'{positive_emotional_percentage * 100}%', 'Average BPM': bpm_average, 'Female Dominant Vocal Percentage': f'{female_dominant_vocal_percentage * 100}%'})
                     print(f"Data added to {csv_file}")
 
-    def process_data_dict(self, cyanite_data, spotify_data, track_playcount, composer_name, org_song, chosen_song_max_stream, chosen_song_data):
+    def process_data_dict(self, cyanite_data, spotify_data, track_playcount, composer_name, org_song, chosen_song_max_stream, chosen_song_release_date):
         """
             Sort data to dict based on rows for csv
         """
@@ -408,7 +433,7 @@ class RunDataProcess():
                   'Genre_Tags': None if cyanite_data['Genre_Tags'] is None else ','.join(cyanite_data['Genre_Tags']), 'Sub_Genre_Tags': None if cyanite_data['Sub_Genre_Tags'] is None else ','.join(cyanite_data['Sub_Genre_Tags']), 'Free Genre': cyanite_data['Free Genre'], 
                   'Description': cyanite_data['Description'], 'Instrument_Tags': None if cyanite_data['Instrument_Tags'] is None else ','.join(cyanite_data['Instrument_Tags']), 'Emotional_Profile': cyanite_data['Emotional_Profile'],
                   'Mood_Tags': None if cyanite_data['Mood_Tags'] is None else ','.join(cyanite_data['Mood_Tags']), 'Simple_Mood_Tags': None if cyanite_data['Simple_Mood_Tags'] is None else ','.join(cyanite_data['Simple_Mood_Tags']), 'Character_Tags': None if cyanite_data['Character_Tags'] is None else ','.join(cyanite_data['Character_Tags']),
-                  'Movement_Tags': None if cyanite_data['Movement_Tags'] is None else ','.join(cyanite_data['Movement_Tags']), 'Energy': cyanite_data['Energy'], 'BPM': None if cyanite_data['BPM'] is None else cyanite_data['BPM']['value'], 'Key': None if cyanite_data['Key'] is None else cyanite_data['Key']['value'], 'Meter': cyanite_data['Meter'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song, 'Original Song Stream Count': chosen_song_max_stream}
+                  'Movement_Tags': None if cyanite_data['Movement_Tags'] is None else ','.join(cyanite_data['Movement_Tags']), 'Energy': cyanite_data['Energy'], 'BPM': None if cyanite_data['BPM'] is None else cyanite_data['BPM']['value'], 'Key': None if cyanite_data['Key'] is None else cyanite_data['Key']['value'], 'Meter': cyanite_data['Meter'], 'Composer Nmae': composer_name, 'Original Song Estimate': org_song, 'Original Song Stream Count': chosen_song_max_stream, 'Original Song Release Date': chosen_song_release_date}
         return song_data
                     
     def get_songs_to_process(self, file):
